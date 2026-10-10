@@ -50,9 +50,9 @@ async def test_load_session_existing():
     """AC: LoadSession restores persona_id and turn_index from Redis."""
     mock_redis = AsyncMock()
     mock_redis.hgetall.return_value = {
-        b"persona_id": b"driving_banter",
-        b"session_id": b"abc-session",
-        b"turn_index": b"10",
+        "persona_id": "driving_banter",
+        "session_id": "abc-session",
+        "turn_index": "10",
     }
 
     with patch("app.agent.nodes.load_session.get_redis", return_value=mock_redis):

@@ -3,7 +3,10 @@ Tests: Authentication endpoints
 AC: Users can register, login, retrieve profile, refresh token.
 """
 import pytest
+import secrets
 from httpx import AsyncClient
+
+TEST_PASSWORD = "Aa1!" + secrets.token_urlsafe(24)
 
 
 @pytest.mark.asyncio
@@ -12,7 +15,7 @@ async def test_register_success(client: AsyncClient):
     response = await client.post("/auth/register", json={
         "username": "geordie_test",
         "email": "geordie_test@example.com",
-        "password": "TestPass123",
+        "password": TEST_PASSWORD,
     })
     assert response.status_code == 201
     data = response.json()
@@ -29,12 +32,12 @@ async def test_register_duplicate_email(client: AsyncClient):
     await client.post("/auth/register", json={
         "username": "user_a",
         "email": "dupe@example.com",
-        "password": "TestPass123",
+        "password": TEST_PASSWORD,
     })
     response = await client.post("/auth/register", json={
         "username": "user_b",
         "email": "dupe@example.com",
-        "password": "TestPass123",
+        "password": TEST_PASSWORD,
     })
     assert response.status_code == 409
 
@@ -56,11 +59,11 @@ async def test_login_success(client: AsyncClient):
     await client.post("/auth/register", json={
         "username": "login_test",
         "email": "login_test@example.com",
-        "password": "TestPass123",
+        "password": TEST_PASSWORD,
     })
     response = await client.post("/auth/login", json={
         "email": "login_test@example.com",
-        "password": "TestPass123",
+        "password": TEST_PASSWORD,
     })
     assert response.status_code == 200
     assert "access_token" in response.json()
@@ -72,11 +75,11 @@ async def test_login_wrong_password(client: AsyncClient):
     await client.post("/auth/register", json={
         "username": "wrongpass_user",
         "email": "wrongpass@example.com",
-        "password": "TestPass123",
+        "password": TEST_PASSWORD,
     })
     response = await client.post("/auth/login", json={
         "email": "wrongpass@example.com",
-        "password": "WrongPassword999",
+        "password": "Aa1!" + secrets.token_urlsafe(24),
     })
     assert response.status_code == 401
 
@@ -87,7 +90,7 @@ async def test_get_me(client: AsyncClient):
     reg = await client.post("/auth/register", json={
         "username": "me_test_user",
         "email": "me_test@example.com",
-        "password": "TestPass123",
+        "password": TEST_PASSWORD,
     })
     token = reg.json()["access_token"]
 

@@ -39,7 +39,7 @@ def test_driving_banter_config(manager: PersonaManager):
     config = manager.get_persona("driving_banter")
     assert config.id == "driving_banter"
     assert config.response_rules.max_tokens <= 100  # Must be short
-    assert config.response_rules.length == "short"
+    assert config.response_rules.length == "punchy"
 
 
 def test_get_unknown_persona(manager: PersonaManager):

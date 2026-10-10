@@ -66,37 +66,44 @@ async def test_retrieve_memories_empty_query():
 @pytest.mark.asyncio
 async def test_memory_extraction_importance_filter():
     """
-    AC: Facts below importance threshold (0.6) are NOT stored.
+    AC: Facts below the configured importance threshold are NOT stored.
     This tests the core memory consolidation logic.
     """
     import json
 
-    low_importance_facts = json.dumps([
+    low_importance_facts = json.dumps({"facts": [
         {"entity_key": "user.trivial", "content": "User blinked twice",
          "memory_type": "semantic", "importance_score": 0.1, "confidence_score": 0.9},
         {"entity_key": "user.car", "content": "User drives an Audi Sport",
          "memory_type": "semantic", "importance_score": 0.95, "confidence_score": 1.0},
-    ])
+    ]})
 
     mock_openai_response = MagicMock()
     mock_openai_response.choices[0].message.content = low_importance_facts
 
     mock_db = AsyncMock()
-    mock_db.execute = AsyncMock(return_value=MagicMock())
+    mock_db.execute = AsyncMock(return_value=MagicMock(fetchall=lambda: []))
 
     with (
-        patch("app.services.memory_service.AsyncOpenAI") as mock_client_cls,
-        patch("app.services.memory_service.embed_text", new_callable=AsyncMock, return_value=[0.1] * 1536),
+        patch("app.services.memory_service.get_llm_client") as mock_client_factory,
+        patch("app.services.memory_service.embed_texts_batch", new_callable=AsyncMock,
+              return_value=[[0.1] * 1536]) as mock_embed,
     ):
         mock_client = AsyncMock()
         mock_client.chat.completions.create = AsyncMock(return_value=mock_openai_response)
-        mock_client_cls.return_value = mock_client
+        mock_client_factory.return_value = mock_client
 
         from app.services.memory_service import write_memory_async
         await write_memory_async("user-123", "I drive an Audi Sport.", "friendly_geordie", mock_db)
 
-        # DB execute should be called exactly ONCE (only the high-importance fact)
-        assert mock_db.execute.call_count == 1
+        mock_embed.assert_awaited_once_with(["User drives an Audi Sport"])
+        inserts = [
+            call.args[0] for call in mock_db.execute.call_args_list
+            if str(call.args[0]).startswith("INSERT INTO memories")
+        ]
+        assert len(inserts) == 1
+        assert inserts[0].compile().params["entity_key"] == "user.car"
+        mock_db.commit.assert_awaited_once()
 
 
 @pytest.mark.asyncio
