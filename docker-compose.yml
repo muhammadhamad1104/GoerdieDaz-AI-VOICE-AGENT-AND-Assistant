@@ -6,7 +6,7 @@ services:
     container_name: geordiedaz_postgres
     environment:
       POSTGRES_USER: geordiedaz
-      POSTGRES_PASSWORD: geordiedaz
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: geordiedaz
     ports:
       - "5432:5432"
