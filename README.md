@@ -82,18 +82,20 @@ Engineered with modular tool dispatching designed to integrate:
 * **Node.js 18+**
 * **OpenAI API Key** (and optional **ElevenLabs API Key**)
 
-### 1. Launch Infrastructure
+### 1. Configure Environment
+```bash
+cp .env.example .env
+```
+Set `POSTGRES_PASSWORD`, `DATABASE_URL`, `JWT_SECRET_KEY`, and your provider API keys in the root `.env`. Generate passwords and signing keys with `python -c "import secrets; print(secrets.token_urlsafe(32))"`.
+The database URL must use the same password as `POSTGRES_PASSWORD`. Set `DEMO_PASSWORD` only if you want migrations to create a demo account. Sign in through the login form; passwords are never bundled into frontend code.
+
+### 2. Launch Infrastructure
 ```bash
 # Start PostgreSQL (with pgvector) and Redis
 docker-compose up -d
 ```
 
-### 2. Configure Backend
-```bash
-cd backend
-cp .env.example .env
-# Edit .env with your OPENAI_API_KEY and optional ELEVENLABS credentials
-```
+The backend and migrations load the root `.env`; an optional `backend/.env` overrides it, and exported environment variables take precedence over both files. Keep credentials out of `VITE_*` variables, which are included in browser bundles. Set `VITE_API_URL` only to a public backend URL when deploying the frontend separately; local development uses the Vite proxy on port 8000.
 
 ### 3. Install Python Dependencies & Run Migrations
 ```bash
@@ -120,12 +122,15 @@ Navigate to **`http://localhost:5173`** in your browser.
 
 ## 🧪 Testing Suite
 
-Run full automated backend test suites covering authentication, vector memory, persona switching, and LangGraph pipelines:
+Run the automated checks from the repository root:
 
 ```bash
-cd backend
-pytest tests/ -v
+python -m pytest -v
 ```
+
+Unit tests mock provider calls and Redis. Authentication tests require `TEST_DATABASE_URL` pointing to a dedicated PostgreSQL database with the `vector` extension enabled; otherwise they are skipped. Their database changes are rolled back after each test. Manual voice-generation and live cloud scripts are excluded from default pytest collection.
+
+Build the frontend with `npm run build` from `frontend/`.
 
 ---
 
@@ -161,8 +166,9 @@ geordiedaz/
 
 ## 👤 Author & Maintainer
 
-* **GitHub:** [@MIbrahimM67](https://github.com/MIbrahimM67)
-* **Repository:** [GoerdieDaz-AI-VOICE-AGENT-AND-Assistant](https://github.com/MIbrahimM67/GoerdieDaz-AI-VOICE-AGENT-AND-Assistant)
+* **Name:** Muhammad Hamad
+* **GitHub:** [@muhammadhamad1104](https://github.com/muhammadhamad1104)
+* **Repository:** [GoerdieDaz-AI-VOICE-AGENT-AND-Assistant](https://github.com/muhammadhamad1104/GoerdieDaz-AI-VOICE-AGENT-AND-Assistant)
 
 ---
 
