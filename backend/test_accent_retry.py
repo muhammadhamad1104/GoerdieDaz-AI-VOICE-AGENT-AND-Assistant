@@ -1,6 +1,9 @@
 """
 Retry failed accent tests with proper timeout handling.
 """
+from pathlib import Path
+from dotenv import load_dotenv
+
 import asyncio, json, base64, wave, time, os
 
 try:
@@ -8,6 +11,8 @@ try:
 except ImportError:
     os.system("pip install websockets")
     import websockets
+
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 API_KEY = os.environ["ELEVENLABS_API_KEY"]
 MODEL_ID = "eleven_multilingual_v2"

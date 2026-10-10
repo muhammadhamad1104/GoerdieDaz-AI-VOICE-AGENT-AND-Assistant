@@ -1,5 +1,9 @@
+from pathlib import Path
+from dotenv import load_dotenv
 import os
 import requests, json
+
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 url = 'https://api.elevenlabs.io/v1/voices'
 headers = {'xi-api-key': os.environ["ELEVENLABS_API_KEY"]}

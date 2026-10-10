@@ -5,6 +5,9 @@ Accent authenticity test — multiple approaches to get genuine Geordie prosody:
 3. Try British voices (George, Daniel) that may have better UK prosody base
 4. Combine: British voice base + Geordie vocabulary + low stability
 """
+from pathlib import Path
+from dotenv import load_dotenv
+
 import asyncio, json, base64, wave, time, os
 
 try:
@@ -12,6 +15,8 @@ try:
 except ImportError:
     os.system("pip install websockets")
     import websockets
+
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 API_KEY = os.environ["ELEVENLABS_API_KEY"]
 MODEL_ID = "eleven_multilingual_v2"

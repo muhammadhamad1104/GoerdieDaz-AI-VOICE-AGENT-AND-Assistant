@@ -3,6 +3,9 @@ ElevenLabs Model A/B/C Comparison Test
 Generates the same sentence across 3 models so the client can hear the difference.
 Outputs WAV files for side-by-side comparison.
 """
+from pathlib import Path
+from dotenv import load_dotenv
+
 import asyncio
 import json
 import base64
@@ -16,6 +19,8 @@ try:
 except ImportError:
     os.system("pip install websockets")
     import websockets
+
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 API_KEY = os.environ["ELEVENLABS_API_KEY"]
 VOICE_ID = "zik8E6YgP11SlhQImASg"  # NewGeodieDaz (current Instant Voice Clone)

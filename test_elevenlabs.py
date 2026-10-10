@@ -1,5 +1,9 @@
+from pathlib import Path
+from dotenv import load_dotenv
 import os
 import requests
+
+load_dotenv(Path(__file__).resolve().parent / ".env")
 
 API_KEY = os.environ["ELEVENLABS_API_KEY"]
 VOICE_ID = "zik8E6YgP11SlhQImASg"
