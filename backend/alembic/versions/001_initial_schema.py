@@ -95,19 +95,15 @@ def upgrade() -> None:
     op.create_index("ix_session_turns_created_at", "session_turns", ["created_at"])
 
     # ── Seed demo account ──────────────────────────────────────────────
-    # Password: GeordieDaz2026! (bcrypt hash — DO NOT use this hash in production)
-    # Generate fresh: python -c "from passlib.context import CryptContext; print(CryptContext(['bcrypt']).hash('GeordieDaz2026!'))"
+    # Seed only when an explicit password is supplied through the environment.
     demo_email = os.getenv("DEMO_EMAIL", "geordie@geordiedaz.com")
     demo_username = os.getenv("DEMO_USERNAME", "geordie_demo")
-    demo_password = os.getenv("DEMO_PASSWORD", "GeordieDaz2026!")
+    demo_password = os.getenv("DEMO_PASSWORD", "")
+    if not demo_password:
+        return
 
-    # Hash the password at migration time using passlib
-    try:
-        from passlib.context import CryptContext
-        pwd = CryptContext(schemes=["bcrypt"]).hash(demo_password)
-    except ImportError:
-        # Fallback static hash for GeordieDaz2026!
-        pwd = "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewkNXPFuFMPFUPS."
+    import bcrypt
+    pwd = bcrypt.hashpw(demo_password.encode("utf-8")[:72], bcrypt.gensalt(rounds=12)).decode("utf-8")
 
     op.execute(
         sa.text("""

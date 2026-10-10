@@ -1,6 +1,7 @@
 """Alembic environment configuration."""
 import os
 from logging.config import fileConfig
+from pathlib import Path
 
 from sqlalchemy import engine_from_config, pool
 
@@ -13,14 +14,16 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 from dotenv import load_dotenv
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
-# Override with DATABASE_URL env var if set (for Railway / production)
+# Database credentials must come from the environment.
 database_url = os.getenv("DATABASE_URL", "")
-if database_url:
-    # Alembic requires psycopg2 sync driver for migrations
-    sync_url = database_url.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
-    config.set_main_option("sqlalchemy.url", sync_url)
+if not database_url:
+    raise RuntimeError("Set DATABASE_URL in the environment or .env before running migrations")
+# Alembic requires psycopg2 sync driver for migrations.
+sync_url = database_url.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
+config.set_main_option("sqlalchemy.url", sync_url.replace("%", "%%"))
 
 # Import all models so Alembic can detect them
 from app.models.user import User       # noqa: F401
