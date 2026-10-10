@@ -27,11 +27,6 @@ export default function LoginPage() {
     }
   };
 
-  const fillDemo = () => {
-    setEmail('geordie@geordiedaz.com');
-    setPassword('GeordieDaz2026!');
-  };
-
   return (
     <div className="content-layer" style={styles.page}>
       {/* Background glow orb (Hallmark Atmospheric bloom) */}
@@ -87,14 +82,6 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Demo account shortcut */}
-        <div style={styles.demoArea}>
-          <div style={styles.divider} />
-          <button onClick={fillDemo} style={styles.demoBtn} id="demo-login-btn">
-            Use Demo Account
-          </button>
-          <p style={styles.demoHint}>geordie@geordiedaz.com · GeordieDaz2026!</p>
-        </div>
       </div>
     </div>
   );

@@ -1,18 +1,18 @@
 /**
  * GeordieDaz — Root Application
- * Auto-authenticates, no login screen.
+ * Starts the backend connection and displays authenticated or sign-in views.
  */
 import { useEffect, useState } from 'react';
 import MainInterface from './components/MainInterface';
+import LoginPage from './components/LoginPage';
 import { useAuth } from './hooks/useAuth';
 
 export default function App() {
-  const { isAuthenticated, user, accessToken, login } = useAuth();
-  const [isBooting, setIsBooting] = useState(true);
+  const { isAuthenticated, user, accessToken, refresh } = useAuth();
   const [serverState, setServerState] = useState('idle'); // idle | waking | ready
   const [healthCheckAttempts, setHealthCheckAttempts] = useState(0);
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:7860';
+  const API_URL = import.meta.env.VITE_API_URL || '';
 
   const startServer = async () => {
     setServerState('waking');
@@ -35,40 +35,16 @@ export default function App() {
   };
 
   useEffect(() => {
-    async function autoLogin() {
-      if (isAuthenticated) { setIsBooting(false); return; }
-      try {
-        await login('geordie@geordiedaz.com', 'GeordieDaz2026!');
-      } catch (err) {
-        console.error('[App] Auto-login failed:', err);
-      } finally {
-        setIsBooting(false);
-      }
-    }
-    
-    if (serverState === 'ready') {
-      const timer = setTimeout(autoLogin, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [serverState, isAuthenticated]);
-
-  useEffect(() => {
-    if (isAuthenticated) setIsBooting(false);
-  }, [isAuthenticated]);
-
-  useEffect(() => {
     const handleAuthExpired = async () => {
-      console.log('[App] Auth expired detected. Performing silent re-login...');
       try {
-        await login('geordie@geordiedaz.com', 'GeordieDaz2026!');
-        console.log('[App] Re-login successful, fresh token acquired.');
+        await refresh();
       } catch (err) {
-        console.error('[App] Silent re-login failed:', err);
+        console.error('[App] Token refresh failed; sign in again.');
       }
     };
     window.addEventListener('auth-expired', handleAuthExpired);
     return () => window.removeEventListener('auth-expired', handleAuthExpired);
-  }, [login]);
+  }, [refresh]);
 
   if (serverState !== 'ready') {
     return (
@@ -93,13 +69,8 @@ export default function App() {
     );
   }
 
-  if (isBooting || !isAuthenticated) {
-    return (
-      <div style={boot}>
-        <div style={bootOrb} />
-        <p style={bootLabel}>GeordieDaz Auto-login...</p>
-      </div>
-    );
+  if (!isAuthenticated) {
+    return <LoginPage />;
   }
 
   return <MainInterface userId={user.id} accessToken={accessToken} />;

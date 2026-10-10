@@ -3,34 +3,14 @@
  * Manages login, register, logout, and token refresh.
  */
 import { useCallback, useEffect } from 'react';
-import { fetchPersonas, getMe, login, logout, refreshToken, register } from '../api/auth';
+import { fetchPersonas, login, logout, refreshToken, register } from '../api/auth';
 import useAppStore from '../stores/appStore';
 
 export function useAuth() {
-  const { accessToken, user, setAuth, clearAuth, setAvailablePersonas, setPersona, setError } =
+  const { accessToken, user, setAuth, clearAuth, setAvailablePersonas, setPersona } =
     useAppStore();
 
-  // Attempt silent token refresh on mount (for returning users)
-  useEffect(() => {
-    if (!accessToken) {
-      _silentRefresh();
-    }
-  }, []);
-
-  async function _silentRefresh() {
-    try {
-      const data = await refreshToken();
-      setAuth(
-        { id: data.user_id, username: data.username, current_persona_id: data.current_persona_id },
-        data.access_token,
-      );
-      await _loadPersonas(data.access_token, data.current_persona_id);
-    } catch {
-      // No valid session — user needs to log in
-    }
-  }
-
-  async function _loadPersonas(token, currentPersonaId) {
+  const loadPersonas = useCallback(async (token, currentPersonaId) => {
     try {
       const personas = await fetchPersonas(token);
       setAvailablePersonas(personas);
@@ -39,7 +19,29 @@ export function useAuth() {
     } catch {
       // Non-fatal
     }
-  }
+  }, [setAvailablePersonas, setPersona]);
+
+  const handleRefresh = useCallback(async (clearOnFailure = true) => {
+    try {
+      const data = await refreshToken();
+      setAuth(
+        { id: data.user_id, username: data.username, current_persona_id: data.current_persona_id },
+        data.access_token,
+      );
+      await loadPersonas(data.access_token, data.current_persona_id);
+      return data;
+    } catch (err) {
+      if (clearOnFailure) clearAuth();
+      throw err;
+    }
+  }, [setAuth, clearAuth, loadPersonas]);
+
+  // Restore once on mount; clearing a failed session should show the login form.
+  useEffect(() => {
+    if (!useAppStore.getState().accessToken) {
+      handleRefresh(false).catch(() => {});
+    }
+  }, [handleRefresh]);
 
   const handleLogin = useCallback(async (email, password) => {
     const data = await login(email, password);
@@ -47,9 +49,9 @@ export function useAuth() {
       { id: data.user_id, username: data.username, current_persona_id: data.current_persona_id },
       data.access_token,
     );
-    await _loadPersonas(data.access_token, data.current_persona_id);
+    await loadPersonas(data.access_token, data.current_persona_id);
     return data;
-  }, []);
+  }, [setAuth, loadPersonas]);
 
   const handleRegister = useCallback(async (username, email, password) => {
     const data = await register(username, email, password);
@@ -57,16 +59,16 @@ export function useAuth() {
       { id: data.user_id, username: data.username, current_persona_id: data.current_persona_id },
       data.access_token,
     );
-    await _loadPersonas(data.access_token, data.current_persona_id);
+    await loadPersonas(data.access_token, data.current_persona_id);
     return data;
-  }, []);
+  }, [setAuth, loadPersonas]);
 
   const handleLogout = useCallback(async () => {
     try {
       if (accessToken) await logout(accessToken);
     } catch {}
     clearAuth();
-  }, [accessToken]);
+  }, [accessToken, clearAuth]);
 
   return {
     user,
@@ -75,5 +77,6 @@ export function useAuth() {
     login: handleLogin,
     register: handleRegister,
     logout: handleLogout,
+    refresh: handleRefresh,
   };
 }
